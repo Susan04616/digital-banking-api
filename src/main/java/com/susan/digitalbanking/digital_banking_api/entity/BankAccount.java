@@ -14,16 +14,16 @@ import java.math.BigDecimal;
 public class BankAccount {
 
     @Id
-    private String tableid;
+    @Column(unique = true, nullable = false)
+    private String id; // custom account ID
 
     @Column(nullable = false)
     private BigDecimal balance;
 
-    @Enumerated(EnumType.STRING) //Store enum as text in DB (saving/current (cheque))
+    @Enumerated(EnumType.STRING)
     private AccountType type;
 
     @ManyToOne
+    @JoinColumn(name = "customer_id") // explicitly name the FK column
     private Customer customer;
-
-
 }
