@@ -19,10 +19,12 @@ public class DigitalBankingApiApplication {
 
         SpringApplication.run(DigitalBankingApiApplication.class, args);
 	}
+    private static final String DEFAULT_PASSWORD = "password123";
 
     @Bean
     CommandLineRunner testDb(CustomerRepository customerRepo, BankAccountRepository accountRepo){
         return args -> {
+
 
             if(customerRepo.findByEmail("john@gmail.com").isEmpty()){
 
