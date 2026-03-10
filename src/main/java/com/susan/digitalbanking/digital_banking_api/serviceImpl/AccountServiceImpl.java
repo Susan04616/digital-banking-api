@@ -4,6 +4,7 @@ import com.susan.digitalbanking.digital_banking_api.entity.*;
 import com.susan.digitalbanking.digital_banking_api.repository.AccountTransactionRepository;
 import com.susan.digitalbanking.digital_banking_api.repository.BankAccountRepository;
 import com.susan.digitalbanking.digital_banking_api.repository.CustomerRepository;
+import com.susan.digitalbanking.digital_banking_api.repository.UserRepository;
 import com.susan.digitalbanking.digital_banking_api.service.AccountService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AccountServiceImpl implements AccountService {
     private final BankAccountRepository accountRepositoy;
     private final CustomerRepository customerRepository;
     private final AccountTransactionRepository transactionRepository;
+//    private final UserRepository userRepository;
 
 
     //open account

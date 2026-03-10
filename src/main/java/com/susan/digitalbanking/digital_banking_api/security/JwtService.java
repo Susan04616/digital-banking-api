@@ -13,7 +13,6 @@ import java.util.Date;
 public class JwtService {
 
     // Secret key used to sign the JWT
-    // In production this should be stored in application.properties or env variables
     private static final String SECRET_KEY = "my-super-secret-key-my-super-secret-key";
 
     // Token expiration times
