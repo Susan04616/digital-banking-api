@@ -24,20 +24,30 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Customer getCustomer(Long id) {
         return customerRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException(("Customer not found")));
+                .orElseThrow(() -> new RuntimeException(("Customer not found")));
     }
 
     //Update customer (email, name)
     @Override
     public Customer updateCustomer(Long id, String newName, String newEmail) {
         Customer customer = customerRepository.findById(id)
-                .orElseThrow(()-> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
 
         //only these fields can be updated
         customer.setName(newName);
         customer.setEmail(newEmail);
 
         return customerRepository.save(customer);
+    }
+
+    //Delete customers
+    public String deleteCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        customerRepository.delete(customer);
+
+        return "Customer deleted successfully";
     }
 
     //get all customers

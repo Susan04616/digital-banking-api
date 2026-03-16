@@ -9,5 +9,5 @@ public interface CustomerService {
     Customer getCustomer(Long id);
     Customer updateCustomer(Long id, String newName, String newEmail);
     List<Customer> getAllCustomers();
-
+    String deleteCustomer(Long id);
 }

@@ -1,5 +1,7 @@
 package com.susan.digitalbanking.digital_banking_api.security;
 
+import com.susan.digitalbanking.digital_banking_api.entity.Role;
+import com.susan.digitalbanking.digital_banking_api.entity.UserEntity;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -20,26 +22,36 @@ public class JwtService {
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 days
 
     // Create a signing key from the secret
-    private Key getSigningKey() {
+    public Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
     // Generate ACCESS token (short-lived)
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(UserEntity user) {
 
         return Jwts.builder()
-                .setSubject(username) // identifies the user
-                .setIssuedAt(new Date()) // token creation time
+                .setSubject(user.getUsername())
+                .claim("roles",
+                        user.getRoles()
+                                .stream()
+                                .map(role -> role.getName())
+                                .toList()
+                )
+                .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRATION))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     // Generate REFRESH token (long-lived)
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(UserEntity user) {
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(user.getUsername())
+                .claim("roles", user.getRoles()
+                        .stream()
+                        .map(Role::getName)
+                        .toList())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

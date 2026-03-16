@@ -4,14 +4,12 @@ import com.susan.digitalbanking.digital_banking_api.entity.AccountTransaction;
 import com.susan.digitalbanking.digital_banking_api.entity.AccountType;
 import com.susan.digitalbanking.digital_banking_api.entity.BankAccount;
 import com.susan.digitalbanking.digital_banking_api.service.AccountService;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,11 +17,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/accounts")
 @RequiredArgsConstructor
-public class AccountController {
+public class BankAccountController {
 
     public final AccountService accountService;
 
-    @PostMapping
+
+    //Open an account
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/open")
     public BankAccount openAccount(
             @RequestParam Long customerId,
             @RequestParam AccountType type,
@@ -33,6 +34,7 @@ public class AccountController {
     }
 
     //deposit
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/{accountId}/deposit")
     public BankAccount deposit(
             @PathVariable String accountId,
@@ -43,6 +45,7 @@ public class AccountController {
     }
 
     //withdraw
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/{accountId}/withdraw")
     public BankAccount withdraw(
             @PathVariable String accountId,
@@ -53,6 +56,7 @@ public class AccountController {
     }
 
     //transfer
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/transfer")
     public Map<String, BankAccount> transfer(
             @RequestParam String fromAccountId,
@@ -62,8 +66,9 @@ public class AccountController {
         return accountService.transfer(fromAccountId, toAccountId, amount);
     }
 
-    //get transactions
+    //get transactions/view transactions
     @GetMapping("/{accountId}/transactions")
+    @PreAuthorize("hasRole('CUSTOMER')")
     public List<AccountTransaction> getTransactions(@PathVariable String accountId){
         return accountService.getAccountTransactions(accountId);
     }

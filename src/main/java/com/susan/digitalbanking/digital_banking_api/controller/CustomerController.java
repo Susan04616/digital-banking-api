@@ -3,37 +3,45 @@ package com.susan.digitalbanking.digital_banking_api.controller;
 import com.susan.digitalbanking.digital_banking_api.entity.Customer;
 import com.susan.digitalbanking.digital_banking_api.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
-@RequiredArgsConstructor
 public class CustomerController {
 
     private final CustomerService customerService;
 
-    // ------------------ Create Customer ------------------
+    public CustomerController(CustomerService customerService){
+        this.customerService = customerService;
+    }
+
+    // Create Customer
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Customer createCustomer(@RequestBody Customer customer) {
         // @RequestBody converts JSON into Customer object
         return customerService.createCustomer(customer);
     }
 
-    // ------------------ Get Customer by ID ------------------
+    //  Get Customer by ID
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public Customer getCustomer(@PathVariable Long id) {
         return customerService.getCustomer(id);
     }
 
-    // ------------------ Get All Customers ------------------
+    //  Get All Customers
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<Customer> getAllCustomers() {
         return customerService.getAllCustomers();
     }
 
-    // ------------------ Update Customer (name & email only) ------------------
+    // Update Customer (name & email only)
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Customer updateCustomer(
             @PathVariable Long id,
@@ -42,4 +50,12 @@ public class CustomerController {
     ) {
         return customerService.updateCustomer(id, name, email);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public String deleteCustomer(@PathVariable Long id){
+        return customerService.deleteCustomer(id);
+    }
+
+
 }

@@ -1,28 +1,28 @@
 package com.susan.digitalbanking.digital_banking_api.security;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserDetailsService userDetailService;
 
-    public JWTAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailService) {
+    public JWTAuthenticationFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userDetailService = userDetailService;
     }
 
     @Override
@@ -31,46 +31,45 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String header = request.getHeader("Authorization");
 
-        String jwtToken = null;
-        String username = null;
-
-        //Check if the header started with "Bearer"
-        if (authHeader != null && authHeader.startsWith("Bearer ")){
-
-            //Extract the token
-            jwtToken = authHeader.substring(7);
-
-            //Extract the username from token
-            username = jwtService.extractUsername(jwtToken);
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+        String token = header.substring(7);
 
-            //Load user deatils from the database
-            UserDetails userDetails = userDetailService.loadUserByUsername(username);
+        try {
 
-            //Validate token
-            if(jwtService.isTokenValid(jwtToken, userDetails.getUsername())){
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(jwtService.getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+            String username = claims.getSubject();
 
-                //Set authentication in spring security context
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            }
+            List<String> roles = claims.get("roles", List.class);
+
+            List<SimpleGrantedAuthority> authorities =
+                    roles.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            authorities
+                    );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (Exception e) {
+            System.out.println("JWT error: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
-
-        }
-
+    }
 }

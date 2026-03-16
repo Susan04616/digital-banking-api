@@ -2,11 +2,12 @@ package com.susan.digitalbanking.digital_banking_api.service;
 
 import com.susan.digitalbanking.digital_banking_api.dto.AuthResponse;
 import com.susan.digitalbanking.digital_banking_api.dto.LoginRequest;
-import com.susan.digitalbanking.digital_banking_api.security.CustomUserDetailsService;
+import com.susan.digitalbanking.digital_banking_api.entity.UserEntity;
+import com.susan.digitalbanking.digital_banking_api.repository.UserRepository;
 import com.susan.digitalbanking.digital_banking_api.security.JwtService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,21 +15,20 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final CustomUserDetailsService customUserDetailsService;
+    private final UserRepository userRepository;
 
-    // Constructor injection for all dependencies
     public AuthService(AuthenticationManager authenticationManager,
                        JwtService jwtService,
-                       CustomUserDetailsService customUserDetailsService) {
+                       UserRepository userRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
-        this.customUserDetailsService = customUserDetailsService;
+        this.userRepository = userRepository;
     }
 
-    // Login method
+    // LOGIN
     public AuthResponse login(LoginRequest request) {
 
-        // Authenticate credentials (email + password)
+        // 1 Authenticate credentials
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
@@ -36,32 +36,38 @@ public class AuthService {
                 )
         );
 
-        // Load full user details (needed for JWT generation)
-        String username = request.getUsername();
+        // 2 Load user from database
+        UserEntity user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // Generate JWT tokens (access + refresh) using username
-        String accessToken = jwtService.generateAccessToken(username);
-        String refreshToken = jwtService.generateRefreshToken(username);
+        //Generate
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
-        // 4 Return tokens in response DTO
+
         return new AuthResponse(accessToken, refreshToken);
     }
-    
-    public AuthResponse refreshToken(String refreshToken) {
 
-        //Extract username from refresh token
+
+       // REFRESH TOKEN
+       public AuthResponse refreshToken(String refreshToken) {
+
+        // Extract username from token
         String username = jwtService.extractUsername(refreshToken);
 
-        //Validate refresh token
+        // Load user
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // 3 Validate refresh token
         if (!jwtService.isTokenValid(refreshToken, username)) {
             throw new RuntimeException("Invalid refresh token");
-
         }
 
-        //Generate new access token
-        String newAccessToken = jwtService.generateAccessToken(username);
+        // 4 Generate new access token WITH roles
+        String newAccessToken = jwtService.generateAccessToken(user);
 
-        //return new tokens
+        // 5 Return tokens
         return new AuthResponse(newAccessToken, refreshToken);
     }
 }
